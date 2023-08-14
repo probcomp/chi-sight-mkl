@@ -1,0 +1,6 @@
+README.md
+setup.py
+src/xsight.egg-info/PKG-INFO
+src/xsight.egg-info/SOURCES.txt
+src/xsight.egg-info/dependency_links.txt
+src/xsight.egg-info/top_level.txt
