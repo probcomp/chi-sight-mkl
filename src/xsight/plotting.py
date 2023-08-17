@@ -56,9 +56,10 @@ def zoom_in(x, pad, ax=None):
 from .utils import unit_vec
 
 
-def plot_poses(ps, sc=None,  r=0.5, cs=None, c="lightgray", cmap="viridis", ax=None, q=0.0, zorder=None, linewidth=2):
+def plot_poses(ps, sc=None,  r=0.5, clip=-1e12, cs=None, c="lightgray", cmap="viridis", ax=None, q=0.0, zorder=None, linewidth=2):
     if ax is None: ax = plt.gca()
     ax.set_aspect(1)
+    ps = ps.reshape(-1,3)
 
     a = ps[:,:2]
     b = a + r * jax.vmap(unit_vec)(ps[:,2])
@@ -67,7 +68,9 @@ def plot_poses(ps, sc=None,  r=0.5, cs=None, c="lightgray", cmap="viridis", ax=N
         if sc is None:
             cs = c
         else:
-            sc = jnp.clip(sc, -1e6,  jnp.max(sc))
+            sc = sc.reshape(-1)
+            sc = jnp.where(jnp==-jnp.inf, clip, sc)
+            sc = jnp.clip(sc, clip,  jnp.max(sc))
             sc = jnp.clip(sc, jnp.quantile(sc, q), jnp.max(sc))
             cs = getattr(plt.cm, cmap)(plt.Normalize()(sc))
 

@@ -62,6 +62,9 @@ truncnorm_pdf    = jax.scipy.stats.truncnorm.pdf
 
 
 # %% ../../notebooks/11 - Constrained Likelihood.ipynb 8
+# TODO: There should be a version that simply 
+# returns the projections onto the ray and 
+# the distances to the ray.
 def get_1d_mixture_components(x, ys, sig):
     """Returns 1d mixture components and thier unnormalized weights."""
     # 1D-Mixture components and value to evaluate.
@@ -77,7 +80,7 @@ def get_1d_mixture_components(x, ys, sig):
 
     return d, ds, ws
 
-# %% ../../notebooks/11 - Constrained Likelihood.ipynb 17
+# %% ../../notebooks/11 - Constrained Likelihood.ipynb 15
 # Some helper to keep code concise
 min = jnp.minimum
 max = jnp.maximum
@@ -96,7 +99,7 @@ def mix_std(ps, mus, stds):
     """Standard Deviation of a mixture of Gaussians."""
     return jnp.sqrt(jnp.sum(ps*stds**2) + jnp.sum(ps*mus**2) - (jnp.sum(ps*mus))**2)
 
-# %% ../../notebooks/11 - Constrained Likelihood.ipynb 18
+# %% ../../notebooks/11 - Constrained Likelihood.ipynb 16
 # TODO: The input Y should be an array only containing range measruements as well. 
 #       For this to work we need to have the pixel vectors (the rays through each pixel)
 
@@ -123,9 +126,9 @@ def make_constrained_sensor_model(zmax, w):
         # the difference to the 3dp3 model
         adj = logsumexp(ws) - jnp.log(len(ws))
 
+        # NOTE: To compare to baseline one should set: `zmax_ = zmax``
         # zmax_ = d/y[2]*zmax
         zmax_ = zmax
-
         
         z = inlier_outlier_mix([jnp.log(1.0-outlier), jnp.log(outlier)], (
                                     (ws, ds, sig), 
@@ -151,7 +154,7 @@ def make_constrained_sensor_model(zmax, w):
 
     return sensor_model
 
-# %% ../../notebooks/11 - Constrained Likelihood.ipynb 19
+# %% ../../notebooks/11 - Constrained Likelihood.ipynb 17
 def get_data_logprobs(tr):
     pixel_addr = lambda i: genjax.select({"X":
         genjax.index_select(i,  genjax.select("measurement"))
@@ -160,16 +163,10 @@ def get_data_logprobs(tr):
     logps = vmap(lambda i: tr.project(pixel_addr(i)))(inds)
     return logps
 
-# %% ../../notebooks/11 - Constrained Likelihood.ipynb 21
-from genjax.generative_functions.distributions import ExactDensity
+# %% ../../notebooks/11 - Constrained Likelihood.ipynb 19
 from bayes3d.likelihood import threedp3_likelihood
-from .mixtures import HeterogeneousMixture
-
-# def make_baseline(zmax, w): 
-    # return lambda X, Y, sig, outlier: threedp3_likelihood(X, Y, sig**2, outlier, zmax, w)
-
-# %% ../../notebooks/11 - Constrained Likelihood.ipynb 22
 from genjax.generative_functions.distributions import ExactDensity
+from .mixtures import HeterogeneousMixture
 
 class OutlierUniform(ExactDensity):
     def sample(self, key, y, zmax):
@@ -177,17 +174,15 @@ class OutlierUniform(ExactDensity):
         return u*y
 
     def logpdf(self, x, y, zmax):
-        y_ = y/jnp.linalg.norm(y)
-        u = jnp.dot(x,y_)
-        return genjax.tfp_uniform.logpdf(u, 0.0, zmax)
+        # y_ = y/jnp.linalg.norm(y)
+        # u = jnp.dot(x,y_)
+        # return genjax.tfp_uniform.logpdf(u, 0.0, zmax)
+        return 1/zmax
 
 outlier_uniform = OutlierUniform()
 
 
-# %% ../../notebooks/11 - Constrained Likelihood.ipynb 23
-# TODO: The input Y should be an array only containing range measruements as well. 
-#       For this to work we need to have the pixel vectors (the rays through each pixel)
-
+# %% ../../notebooks/11 - Constrained Likelihood.ipynb 20
 def make_baseline_sensor_model(zmax, w):
     """Explicit version of the 3dp3 sensor model."""
   

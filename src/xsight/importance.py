@@ -37,6 +37,11 @@ vmap      = jax.vmap
 def _merge(x,y): return x.merge(y)
 
 
+def _update(key, tr, argdiffs, ch):
+    retdiff, w, tr_, discard = tr.update(key, ch, argdiffs)
+    return tr_, w, retdiff, discard
+
+
 def _simulate(key, model, args):
     return model.simulate(key, args)
 

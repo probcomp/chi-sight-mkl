@@ -26,6 +26,8 @@ logsumexp = jax.scipy.special.logsumexp
 def keysplit(key, *ns):
     if len(ns) == 0:
         return jax.random.split(key, 1)[0]
+    elif len(ns) == 1:
+        return jax.random.split(key, ns[0])
     else:
         keys = []
         for n in ns:
@@ -35,7 +37,7 @@ def keysplit(key, *ns):
         return keys
 
 
-# %% ../../notebooks/00 - Utils.ipynb 6
+# %% ../../notebooks/00 - Utils.ipynb 7
 def bounding_box(arr, pad=0):
     """Takes a point-like (last dim = 2) arr and returns its bounding box."""
     return jnp.array([
@@ -43,7 +45,7 @@ def bounding_box(arr, pad=0):
         [jnp.max(arr[...,0])+pad, jnp.max(arr[...,1])+pad]
     ])
 
-# %% ../../notebooks/00 - Utils.ipynb 7
+# %% ../../notebooks/00 - Utils.ipynb 8
 def argmax_axes(a, axes=None):
     if axes is None: return jnp.argmax(a)
     
@@ -61,7 +63,7 @@ def argmax_axes(a, axes=None):
 
     return  I
 
-# %% ../../notebooks/00 - Utils.ipynb 10
+# %% ../../notebooks/00 - Utils.ipynb 11
 def rot2d(hd): return jnp.array([
     [jnp.cos(hd), -jnp.sin(hd)], 
     [jnp.sin(hd),  jnp.cos(hd)]
@@ -79,14 +81,12 @@ def unit_vec(hd):
 def adjust_angle(hd): 
     return (hd + jnp.pi)%(2*jnp.pi) - jnp.pi
 
-# %% ../../notebooks/00 - Utils.ipynb 12
-def argdiffs(args, other=None):
-    if other is None: 
-        return tuple(map(lambda v: Diff(v, UnknownChange), args))
-    else:
-        return tuple(map(lambda v: Diff(v, UnknownChange), args))
-
 # %% ../../notebooks/00 - Utils.ipynb 13
+def argdiffs(args, other=None):
+    return tuple(map(lambda v: Diff(v, UnknownChange), args))
+
+
+# %% ../../notebooks/00 - Utils.ipynb 14
 from builtins import property as _property, tuple as _tuple
 from typing import Any
 
@@ -104,7 +104,7 @@ class Args(tuple):
     def __getitem__(self, k: str) -> Any:
         return self._d[k]
 
-# %% ../../notebooks/00 - Utils.ipynb 14
+# %% ../../notebooks/00 - Utils.ipynb 15
 # 
 # Monkey patching `sample` for `BuiltinGenerativeFunction`
 # 
