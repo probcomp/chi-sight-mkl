@@ -139,7 +139,10 @@ def make_constrained_sensor_model(zmax, w):
         
     @gen
     def sensor_model(Y, sig, outlier):   
-        """Constrained sensor model."""
+        """
+        Constrained sensor model that returns a vector of range measurements conditioned on 
+        an image, noise level, and outlier probability.
+        """
         Y_ = pad(Y, w, val=pad_val)
 
         I, J = jnp.mgrid[:Y.shape[0], :Y.shape[1]]
@@ -223,6 +226,6 @@ def make_baseline_sensor_model(zmax, w):
         X,_ = genjax.Map(_sensor_model_ij, (0,0,None,None,None))(I, J, Y_, sig, outlier) @ "X"
         X = X.reshape(Y.shape)
 
-        return X,None
+        return X, None
 
     return sensor_model
