@@ -138,6 +138,21 @@ MP_WORLD_VIEW = np.array([
 # %% ../../notebooks/03 - Meshes.ipynb 15
 import meshplot as mp
 import numpy as np
+#|export
+# How a CAMERA coords "naturally" 
+# embed into mp viewer coords
+MP_CAM_VIEW = np.array([
+    [ 1.0,   0.0,  0.0],
+    [ 0.0,   1.0,  0.0],
+    [ 0.0,   0.0,  -1.0]
+])
+
+# MP canonical Camera rotation
+MP_WORLD_VIEW = np.array([
+    [ 1.0,  0.0,  0.0],
+    [ 0.0,  0.0,  1.0],
+    [ 0.0,  -1.0,  0.0]
+])
 
 class Viewer(object):
     def __init__(self, 
@@ -173,7 +188,7 @@ class Viewer(object):
         self._v.__update_view = lambda: None
 
         self._v._orbit.target = tuple(cam_look@self.T)
-        self._v._cam.lookAt(cam_look@self.T)
+        self._v._cam.lookAt(tuple(cam_look@self.T))
         self._v._cam.position = tuple(cam_pos@self.T)
         self._v._orbit.exec_three_obj_method('update')
         self._v._cam.exec_three_obj_method('updateProjectionMatrix')
@@ -203,7 +218,7 @@ class Viewer(object):
         return self._v._renderer._repr_mimebundle_(**kwargs)
 
     def look_at(self, look):
-        self._v._cam.lookAt(look@self.T)
+        self._v._cam.lookAt(tuple(look@self.T))
         # self._v._orbit.target = look
         self._v._orbit.exec_three_obj_method('update')
         self._v._cam.exec_three_obj_method('updateProjectionMatrix')
