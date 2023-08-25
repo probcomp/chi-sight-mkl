@@ -135,7 +135,7 @@ MP_WORLD_VIEW = np.array([
     [ 0.0,  -1.0,  0.0]
 ])
 
-# %% ../../notebooks/03 - Meshes.ipynb 15
+# %% ../../notebooks/03 - Meshes.ipynb 16
 import meshplot as mp
 import numpy as np
 #|export
@@ -204,15 +204,16 @@ class Viewer(object):
     def add_points(self, vs, c=np.array([[1,1,1]]), s=1.0):
         self._v.add_points(vs@self.T, c=c, shading={"point_size": s})
 
-    def add_pose(self, p, colors=['red', 'green', 'blue'], width=4, scale=1.0):
+    def add_pose(self, p, colors=['red', 'green', 'blue'], linewidth=4, scale=1.0):
         x, r = unpack_pose(p)
         x = x@self.T
         for dx, c in zip(r.T, colors):
-            self._v.add_lines(x[None], (x + dx@self.T)[None], 
-                         shading=dict(line_width = width, line_color = c));
+            self._v.add_lines(x[None], (x + scale*dx@self.T)[None], 
+                         shading=dict(line_width = linewidth,linewidth=linewidth, line_color = c));
 
 
         return self
+
         
     def _repr_mimebundle_(self, **kwargs):
         return self._v._renderer._repr_mimebundle_(**kwargs)
@@ -229,7 +230,7 @@ class Viewer(object):
         self._v._cam.exec_three_obj_method('updateProjectionMatrix')
         return self
 
-# %% ../../notebooks/03 - Meshes.ipynb 20
+# %% ../../notebooks/03 - Meshes.ipynb 21
 def trimesh_from_2d_segs(segs):
     pieces = []
     for s in segs:
@@ -245,7 +246,7 @@ def trimesh_from_2d_segs(segs):
     map_mesh = trimesh.util.concatenate(pieces)
     return map_mesh
 
-# %% ../../notebooks/03 - Meshes.ipynb 21
+# %% ../../notebooks/03 - Meshes.ipynb 22
 import json 
 
 def load_env_data(fname):

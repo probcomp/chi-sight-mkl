@@ -7,14 +7,14 @@ __all__ = ['key', 'logsumexp', 'cls', 'keysplit', 'bounding_box', 'argmax_axes',
 
 # %% ../../notebooks/00 - Utils.ipynb 2
 import matplotlib.pyplot as plt
-from matplotlib.collections import LineCollection
+from   matplotlib.collections import LineCollection
 import numpy as np
 
 import jax
 import jax.numpy as jnp
 
 import genjax
-from genjax._src.core.transforms.incremental import UnknownChange, NoChange, Diff
+from   genjax._src.core.transforms.incremental import UnknownChange, NoChange, Diff
 
 
 
@@ -24,22 +24,21 @@ logsumexp = jax.scipy.special.logsumexp
 
 # %% ../../notebooks/00 - Utils.ipynb 5
 def keysplit(key, *ns):
-    if len(ns) == 0:
+    if len(ns) == 0:  
         return jax.random.split(key, 1)[0]
     elif len(ns) == 1:
-        return jax.random.split(key, ns[0])
+        n, = ns
+        if n == 1: return keysplit(key)
+        else:      return jax.random.split(key, ns[0])
     else:
         keys = []
-        for n in ns:
-            if n == 1: keys.append(jax.random.split(key, 1)[0])
-            else: keys.append(jax.random.split(key, n))
-            
+        for n in ns: keys.append(keysplit(key, n))
         return keys
 
 
 # %% ../../notebooks/00 - Utils.ipynb 7
 def bounding_box(arr, pad=0):
-    """Takes a point-like (last dim = 2) arr and returns its bounding box."""
+    """Takes a euclidean-like arr (`arr.shape[-1] == 2`) and returns its bounding box."""
     return jnp.array([
         [jnp.min(arr[...,0])-pad, jnp.min(arr[...,1])-pad],
         [jnp.max(arr[...,0])+pad, jnp.max(arr[...,1])+pad]
