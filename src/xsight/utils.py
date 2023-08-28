@@ -103,7 +103,7 @@ class Args(tuple):
     def __getitem__(self, k: str) -> Any:
         return self._d[k]
 
-# %% ../../notebooks/00 - Utils.ipynb 15
+# %% ../../notebooks/00 - Utils.ipynb 16
 # 
 # Monkey patching `sample` for `BuiltinGenerativeFunction`
 # 

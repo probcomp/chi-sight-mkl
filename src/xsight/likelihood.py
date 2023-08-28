@@ -4,8 +4,8 @@
 __all__ = ['console', 'key', 'tfd', 'uniform', 'truncnormal', 'normal', 'diagnormal', 'mixture_of_diagnormals',
            'mixture_of_normals', 'mixture_of_truncnormals', 'normal_logpdf', 'truncnorm_logpdf', 'truncnorm_pdf', 'min',
            'max', 'threedp3_outlier', 'get_projections_and_distances', 'get_1d_mixture_components', 'dslice', 'pad',
-           'mix_std', 'make_constrained_sensor_model', 'get_data_logprobs', 'ThreeDP3Outlier',
-           'make_baseline_sensor_model']
+           'mix_std', 'make_constrained_sensor_model', 'get_data_logprobs', 'get_gaussian_blurr_weights',
+           'make_blurred_sensor_model', 'ThreeDP3Outlier', 'make_baseline_sensor_model']
 
 # %% ../../notebooks/11 - Constrained Likelihood.ipynb 3
 import jax
@@ -176,6 +176,86 @@ def get_data_logprobs(tr):
     return logps
 
 # %% ../../notebooks/11 - Constrained Likelihood.ipynb 21
+def get_gaussian_blurr_weights(x, ys, sig_pix=5):
+    """Gaussian blurr weights"""
+
+    # Projections serve as 1d mixture components
+    ys_ = ys @ x / jnp.linalg.norm(x, axis=-1)
+
+    # Pixels on on canvas `[-w/2, w/2] x [-h/2,h/2]`, where
+    # `w,h` are the width and height in pixels. This comes from 
+    # how the renderer works, the ys alone don't carry that infromation.
+    # We just assume they come from Nishad's renderer. 
+    pixs   = ys/ys[:,[2]]*(100/2)
+    center = x/x[2]*(100/2)
+    
+    # Compute gaussian blurr weights
+    ds_ = jnp.linalg.norm(pixs[:,:2] - center[:2], axis=-1)
+    ws_ = normal_logpdf(ds_, loc=0.0, scale=sig_pix)
+
+    return ys_, ws_
+
+# %% ../../notebooks/11 - Constrained Likelihood.ipynb 25
+# TODO: The input Y should be an array only containing range measruements as well. 
+#       For this to work we need to have the pixel vectors (the rays through each pixel)
+
+def make_blurred_sensor_model(zmax, w):
+    """Returns an symbolic gaussian blurred sensor model (marginalized over outliers)."""    
+
+    pad_val = -100.0
+
+    @genjax.drop_arguments
+    @gen
+    def _sensor_model_ij(i, j, Y_, sig, outlier):
+
+        # Note that `i,j` are at the edge of the filter window,
+        # the Center is offset by `w``
+        y  = Y_[i+w,j+w]
+        d  = jnp.linalg.norm(y, axis=-1)
+        ys = dslice(Y_, i, j, w).reshape(-1,3)
+        
+        ys_, ws_ =  get_gaussian_blurr_weights(y, ys, w)
+
+        inlier_outlier_mix = genjax.tfp_mixture(genjax.tfp_categorical, [
+                                mixture_of_normals, genjax.tfp_uniform])
+
+        # Adjustment weights to make up for 
+        # the difference to the 3dp3 model
+        adj = logsumexp(ws_) - jnp.log(len(ws_))
+
+        # NOTE: To compare to baseline one should set: `zmax_ = zmax``
+        # zmax_ = d/y[2]*zmax
+        zmax_ = zmax
+        
+        z = inlier_outlier_mix([jnp.log(1.0-outlier), jnp.log(outlier)], (
+                                    (ws_, ys_, sig), 
+                                    (0.0, zmax_))) @ "measurement"
+
+        
+        return z * y/d, adj
+
+        
+    @gen
+    def sensor_model(Y, sig, outlier):   
+        """
+        Constrained sensor model that returns a vector of range measurements conditioned on 
+        an image, noise level, and outlier probability.
+        """
+        Y_ = pad(Y, w, val=pad_val)
+
+        I, J = jnp.mgrid[:Y.shape[0], :Y.shape[1]]
+        I, J = I.ravel(), J.ravel()
+                
+        
+        X, W = genjax.Map(_sensor_model_ij, (0,0,None,None,None))(I, J, Y_, sig, outlier) @ "X"
+        W = W.reshape(Y.shape[:2])
+        X = X.reshape(Y.shape)
+
+        return X, W
+
+    return sensor_model
+
+# %% ../../notebooks/11 - Constrained Likelihood.ipynb 27
 from bayes3d.likelihood import threedp3_likelihood
 from genjax.generative_functions.distributions import ExactDensity
 from .mixtures import HeterogeneousMixture
@@ -195,7 +275,7 @@ class ThreeDP3Outlier(ExactDensity):
 
 threedp3_outlier = ThreeDP3Outlier()
 
-# %% ../../notebooks/11 - Constrained Likelihood.ipynb 22
+# %% ../../notebooks/11 - Constrained Likelihood.ipynb 28
 def make_baseline_sensor_model(zmax, w):
     """Explicit version of the 3dp3 sensor model."""
   
