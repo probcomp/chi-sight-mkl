@@ -9,14 +9,10 @@ __all__ = ['key', 'logsumexp', 'cls', 'keysplit', 'bounding_box', 'argmax_axes',
 import matplotlib.pyplot as plt
 from   matplotlib.collections import LineCollection
 import numpy as np
-
 import jax
 import jax.numpy as jnp
-
 import genjax
 from   genjax._src.core.transforms.incremental import UnknownChange, NoChange, Diff
-
-
 
 # %% ../../notebooks/00 - Utils.ipynb 4
 key       = jax.random.PRNGKey(0)
@@ -46,6 +42,7 @@ def bounding_box(arr, pad=0):
 
 # %% ../../notebooks/00 - Utils.ipynb 8
 def argmax_axes(a, axes=None):
+    """Argmax along specified axes"""
     if axes is None: return jnp.argmax(a)
     
     n = len(axes)        
@@ -77,7 +74,8 @@ def apply_2dpose(p, ys):
 def unit_vec(hd): 
     return jnp.array([jnp.cos(hd), jnp.sin(hd)])
 
-def adjust_angle(hd): 
+def adjust_angle(hd):
+    """Adjusts angle to lie in the interval [-pi,pi)."""
     return (hd + jnp.pi)%(2*jnp.pi) - jnp.pi
 
 # %% ../../notebooks/00 - Utils.ipynb 13

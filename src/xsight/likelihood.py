@@ -261,7 +261,7 @@ def make_blurred_sensor_model(zmax, w):
     return sensor_model
 
 # %% ../../notebooks/11 - Constrained Likelihood.ipynb 42
-from bayes3d.likelihood import threedp3_likelihood
+from bayes3d.likelihood import threedp3_likelihood_old
 from genjax.generative_functions.distributions import ExactDensity
 from .mixtures import HeterogeneousMixture
 
@@ -275,7 +275,7 @@ class ThreeDP3Outlier(ExactDensity):
         # We assume here that x and y linearly dependent.
         y_ = y/jnp.linalg.norm(y)
         u  = jnp.dot(x,y_)
-        return genjax.tfp_uniform.logpdf(u, 0.0, zmax)
+        return genjax.tfp_uniform.logpdf(u, 0.0, zmax + 1e-4)
 
 
 threedp3_outlier = ThreeDP3Outlier()
